@@ -108,7 +108,6 @@
 
     <script>
       let config = null;
-      let pollInterval = null;
 
       // This function receives the injected data from QuestPhone
       function injectData(data) {
@@ -253,13 +252,18 @@
 
       // Complete the quest
       function completeQuest() {
-        clearInterval(pollInterval);
+       
+        if(WebAppInterface.isQuestCompleted()){
+             document.getElementById(
+            "message"
+          ).textContent = `This Quest is already completed.`;
+          
+            return
+        } 
         WebAppInterface.onQuestCompleted();
         WebAppInterface.disableFullScreen();
         WebAppInterface.toast("Quest completed! You made enough commits.");
         document.getElementById("message").textContent = "Quest Completed!";
-        document.getElementById("status").textContent =
-          "You can now close this.";
       }
     </script>
   </body>

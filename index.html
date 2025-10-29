@@ -5,11 +5,116 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Commit-Block Quest – Setup</title>
   <style>
-    body {font-family: Arial, sans-serif; padding:20px; max-width:600px; margin:auto;}
-    .step {margin-bottom:20px;}
-    .day-button {margin:2px; padding:6px 10px;}
-    .day-button.active {font-weight:bold; background:#ddf;}
-    #jsonOutput {background:#f4f4f4; padding:15px; border:1px solid #ccc;}
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .step {
+      margin-bottom: 2rem;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .step h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+    }
+    .day-button {
+      margin: 4px;
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .day-button:hover {
+      background: var(--bg);
+    }
+    .day-button.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    #generateBtn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    #generateBtn:hover {
+      background: var(--primary-hover);
+    }
+    #jsonOutput {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-top: 1.5rem;
+    }
+    #copyBtn {
+      background: white;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      padding: 8px 16px;
+      border-radius: 4px;
+      margin-top: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #copyBtn:hover {
+      background: var(--primary);
+      color: white;
+    }
+    #quest-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    #quest-header h1 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    .input-group {
+      margin-bottom: 1rem;
+    }
+    small {
+      color: #64748b;
+    }
+    #days-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -43,10 +148,19 @@
     <!-- 4. Custom Settings -->
     <div class="step">
       <h2>4. Settings</h2>
-      <label>GitHub Username: <input type="text" id="githubUser" placeholder="your-github-username" required></label><br><br>
-      <label>GitHub Token: <input type="password" id="githubToken" placeholder="github_pat_..." required></label><br>
-      <small>Create a <a href="https://github.com/settings/tokens" target="_blank">Personal Access Token</a> with 'repo' scope</small><br><br>
-      <label>Required Commits Everyday: <input type="number" id="requiredCommits" min="1" value="3"></label>
+      <div class="input-group">
+        <label for="githubUser">GitHub Username</label>
+        <input type="text" id="githubUser" placeholder="your-github-username" required>
+      </div>
+      <div class="input-group">
+        <label for="githubToken">GitHub Token</label>
+        <input type="password" id="githubToken" placeholder="github_pat_..." required>
+        <small>Create a <a href="https://github.com/settings/tokens" target="_blank">Personal Access Token</a> with 'repo' scope</small>
+      </div>
+      <div class="input-group">
+        <label for="requiredCommits">Required Commits Everyday</label>
+        <input type="number" id="requiredCommits" min="1" value="3">
+      </div>
     </div>
 
     <!-- 5. Generate -->
