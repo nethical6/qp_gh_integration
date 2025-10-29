@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Commit Blocker</title>
+    <style>
+      :root {
+        --color-primary: #00ff9f;
+        --color-on-primary: #000000;
+        --color-secondary: #00bfff;
+        --color-on-secondary: #000000;
+        --color-tertiary: #8a2be2;
+        --color-on-tertiary: #ffffff;
+        --color-background: #0a0a0a;
+        --color-on-background: #00ff9f;
+        --color-surface: #111111;
+        --color-on-surface: #b0ffda;
+        --color-error: #ff0040;
+        --color-on-error: #000000;
+      }
+
+      * {
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background: var(--color-background);
+        color: var(--color-on-background);
+      }
+
+      #quest-container {
+        background: var(--color-surface);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(0, 255, 159, 0.1);
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        margin: 20px;
+      }
+
+      h1 {
+        margin-bottom: 1.5rem;
+        color: var(--color-on-surface);
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      p {
+        margin: 1rem 0;
+        color: var(--color-on-surface);
+        line-height: 1.5;
+      }
+
+      #status {
+        padding: 1rem;
+        border-radius: 12px;
+        border: 2px solid var(--color-on-surface);
+        font-weight: 600;
+        font-size: 1.2rem;
+        margin: 1.5rem 0;
+        color: var(--color-on-surface);
+      }
+
+      button {
+        color: var(--color-on-surface);
+        background-color: var(--color-primary);
+        border: none;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 255, 159, 0.2);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .theme-transition {
+        transition: all 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="quest-container">
+      <h1>GitHub Commit</h1>
+      <p id="message">Loading configuration...</p>
+      <p id="status">Checking commits...</p>
+      <button id="checkNowBtn" onclick="checkCommits()">Check Now</button>
+    </div>
+
+    <script>
+      let config = null;
+      let pollInterval = null;
+
+      // This function receives the injected data from QuestPhone
+      function injectData(data) {
+        try {
+          if (typeof data === "string") {
+            config = JSON.parse(data);
+          } else if (typeof data === "object") {
+            config = data;
+          } else {
+            throw new Error("Invalid data format");
+          }
+          // Parse target as number
+          config.requiredCommits = parseInt(config.requiredCommits, 10);
+          if (isNaN(config.requiredCommits) || config.requiredCommits < 1) {
+            config.requiredCommits = 5; // Default fallback
+          }
+          checkCommits();
+          document.getElementById(
+            "message"
+          ).textContent = `🎯 Goal: Make ${config.requiredCommits} commits today as @${config.githubUser}`;
+          WebAppInterface.enableFullScreen();
+        } catch (e) {
+          document.getElementById("message").textContent =
+            "Error loading configuration: " + e.message;
+          WebAppInterface.toast("Error: " + e.message);
+        }
+      }
+
+      // Apply theme provided by QuestPhone
+      function applyTheme(theme) {
+        const root = document.documentElement;
+        const container = document.getElementById("quest-container");
+        const elements = document.querySelectorAll("button, p, h1, #status");
+
+        [container, ...elements].forEach((el) => {
+          if (el) el.classList.add("theme-transition");
+        });
+
+        root.style.setProperty("--color-primary", theme.primary || "#00FF9F");
+        root.style.setProperty(
+          "--color-on-primary",
+          theme.onPrimary || "#000000"
+        );
+        root.style.setProperty(
+          "--color-secondary",
+          theme.secondary || "#00BFFF"
+        );
+        root.style.setProperty(
+          "--color-on-secondary",
+          theme.onSecondary || "#000000"
+        );
+        root.style.setProperty("--color-tertiary", theme.tertiary || "#8A2BE2");
+        root.style.setProperty(
+          "--color-on-tertiary",
+          theme.onTertiary || "#FFFFFF"
+        );
+        root.style.setProperty(
+          "--color-background",
+          theme.background || "#0A0A0A"
+        );
+        root.style.setProperty(
+          "--color-on-background",
+          theme.onBackground || "#00FF9F"
+        );
+        root.style.setProperty("--color-surface", theme.surface || "#111111");
+        root.style.setProperty(
+          "--color-on-surface",
+          theme.onSurface || "#B0FFDA"
+        );
+        root.style.setProperty("--color-error", theme.error || "#FF0040");
+        root.style.setProperty("--color-on-error", theme.onError || "#000000");
+
+      }
+
+      // Function to format date for comparison
+      function formatDate(date) {
+        return date.toISOString().split("T")[0];
+      }
+
+      // Callback for fetch
+    
+      function handleFetch(result) {
+        try {
+          const events = JSON.parse(result);
+          if (!Array.isArray(events)) {
+            throw new Error("Invalid response format");
+          }
+
+          let pushEventCount = 0;
+          const today = formatDate(new Date());
+
+          events.forEach((event) => {
+            if (event.type === "PushEvent") {
+              const eventDate = new Date(event.created_at);
+              const eventDateStr = formatDate(eventDate);
+
+              if (eventDateStr === today) {
+                pushEventCount++;
+                console.log(`Found push event #${pushEventCount}`);
+                const status = document.getElementById("status");
+                status.textContent = `Commits today: ${pushEventCount} / ${config.requiredCommits}`;
+                status.style.transform = "scale(1.05)";
+                setTimeout(() => (status.style.transform = "scale(1)"), 200);
+
+                
+                if (pushEventCount >= config.requiredCommits) {
+                  completeQuest();
+                }
+              }
+            }
+          });
+
+          if (pushEventCount === 0) {
+            document.getElementById(
+              "status"
+            ).textContent = `No push events found today (${today})`;
+          }
+        } catch (e) {
+          document.getElementById("status").textContent =
+            "Error fetching commits: " + e.message;
+          WebAppInterface.toast("Fetch error: " + e.message);
+        }
+      }
+      // Check commits using fetchWithoutCorsAsync
+      function checkCommits() {
+        if (!config || !config.githubUser) {
+          WebAppInterface.toast("Configuration not loaded");
+          return;
+        }
+        const timestamp = new Date().getTime();
+        const url = `https://api.github.com/users/${config.githubUser}/events?per_page=100&_=${timestamp}`;
+        const headers = {
+          Authorization: `Bearer ${config.githubToken}`,
+          Accept: "application/vnd.github.v3+json",
+        };
+        WebAppInterface.fetchDataWithoutCorsAsync(
+          url,
+          JSON.stringify(headers),
+          "handleFetch"
+        );
+      }
+
+      // Complete the quest
+      function completeQuest() {
+        clearInterval(pollInterval);
+        WebAppInterface.onQuestCompleted();
+        WebAppInterface.disableFullScreen();
+        WebAppInterface.toast("Quest completed! You made enough commits.");
+        document.getElementById("message").textContent = "Quest Completed!";
+        document.getElementById("status").textContent =
+          "You can now close this.";
+      }
+    </script>
+  </body>
+</html>

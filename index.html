@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commit-Block Quest – Setup</title>
+  <style>
+    body {font-family: Arial, sans-serif; padding:20px; max-width:600px; margin:auto;}
+    .step {margin-bottom:20px;}
+    .day-button {margin:2px; padding:6px 10px;}
+    .day-button.active {font-weight:bold; background:#ddf;}
+    #jsonOutput {background:#f4f4f4; padding:15px; border:1px solid #ccc;}
+  </style>
+</head>
+<body>
+  <div id="quest-container">
+
+    <div id="quest-header">
+      <h1>Commit-Block Quest</h1>
+      <p>Block distractions until you push X commits on Github.</p>
+    </div>
+
+    <!-- 1. Quest Title -->
+    <div class="step">
+      <h2>1. Quest Title</h2>
+      <input type="text" id="inputQuestTitle" placeholder="e.g. Code Sprint" value="">
+    </div>
+
+    <!-- 2. Active Days -->
+    <div class="step">
+      <h2>2. Active Days</h2>
+      <div id="days-container">
+        <button class="day-button" data-day="MON">Mon</button>
+        <button class="day-button" data-day="TUE">Tue</button>
+        <button class="day-button" data-day="WED">Wed</button>
+        <button class="day-button" data-day="THU">Thu</button>
+        <button class="day-button" data-day="FRI">Fri</button>
+        <button class="day-button" data-day="SAT">Sat</button>
+        <button class="day-button" data-day="SUN">Sun</button>
+      </div>
+    </div>
+
+    <!-- 4. Custom Settings -->
+    <div class="step">
+      <h2>4. Settings</h2>
+      <label>GitHub Username: <input type="text" id="githubUser" placeholder="your-github-username" required></label><br><br>
+      <label>GitHub Token: <input type="password" id="githubToken" placeholder="github_pat_..." required></label><br>
+      <small>Create a <a href="https://github.com/settings/tokens" target="_blank">Personal Access Token</a> with 'repo' scope</small><br><br>
+      <label>Required Commits Everyday: <input type="number" id="requiredCommits" min="1" value="3"></label>
+    </div>
+
+    <!-- 5. Generate -->
+    <div class="step">
+      <button id="generateBtn">Generate Configuration</button>
+    </div>
+
+    <!-- JSON Output -->
+    <div id="jsonOutput" style="display:none;">
+      <h3>Copy the JSON below and paste it into QuestPhone</h3>
+      <pre id="jsonContent"></pre>
+      <button id="copyBtn">Copy JSON</button>
+    </div>
+  </div>
+
+  <script>
+    const selectedDays = new Set();
+
+    document.querySelectorAll('.day-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = btn.dataset.day;
+        if (selectedDays.has(d)) {
+          selectedDays.delete(d);
+          btn.classList.remove('active');
+        } else {
+          selectedDays.add(d);
+          btn.classList.add('active');
+        }
+      });
+    });
+
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const title = document.getElementById('inputQuestTitle').value.trim() || 'Commit-Block Quest';
+      const githubUser = document.getElementById('githubUser').value.trim();
+      const requiredCommits = document.getElementById('requiredCommits').value;
+
+      if (!githubUser) { alert('GitHub username is required'); return; }
+      if (selectedDays.size === 0) { alert('Select at least one active day'); return; }
+
+      const startHour = 0;
+      const endHour   = 24;
+
+      const githubToken = document.getElementById('githubToken').value.trim();
+      if (!githubToken) { alert('GitHub token is required'); return; }
+      
+      const questJson = JSON.stringify({
+        webviewUrl: location.origin + location.pathname.replace('index.html','view.html'), // same repo
+        githubUser,
+        githubToken,
+        requiredCommits: requiredCommits.toString()
+      });
+
+      const config = {
+        title,
+        selected_days: Array.from(selectedDays),
+        time_range: [startHour, endHour],
+        id: generateUUID(),
+        quest_json: questJson,
+        integration_id: "EXTERNAL_INTEGRATION",
+
+      };
+
+      const pretty = JSON.stringify(config, null, 2);
+      document.getElementById('jsonContent').textContent = pretty;
+      document.getElementById('jsonOutput').style.display = 'block';
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(document.getElementById('jsonContent').textContent)
+        .then(() => alert('Copied! Paste into QuestPhone.'))
+        .catch(() => alert('Copy failed'));
+    });
+  </script>
+</body>
+</html>
