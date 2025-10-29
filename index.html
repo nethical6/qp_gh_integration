@@ -301,7 +301,11 @@
         const questJson = JSON.stringify({
           webviewUrl:
             location.origin +
-            location.pathname.replace("index.html", "view.html"), // same repo
+            (location.pathname.endsWith("index.html")
+              ? location.pathname.replace("index.html", "view.html")
+              : location.pathname.endsWith("/")
+              ? location.pathname + "view.html"
+              : location.pathname + "/view.html"), // same repo
           githubUser,
           githubToken,
           requiredCommits: requiredCommits.toString(),
